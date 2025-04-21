@@ -6,6 +6,11 @@ This repository contains documentation, guides, and resources for the FOGIS Netw
 
 - [GitHub CLI Guides](github-cli/)
   - [Managing Project Boards with GitHub CLI](github-cli/project-boards.md)
+- [Project Management](project-management/)
+  - [Project Management Guide](project-management/README.md)
+  - [Issue Templates](project-management/issue-templates/)
+  - [Pull Request Template](project-management/pull_request_template.md)
+  - [Automation](project-management/automation/)
 
 ## Purpose
 
