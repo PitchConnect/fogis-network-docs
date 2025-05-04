@@ -11,6 +11,7 @@ This repository contains documentation, guides, and resources for the FOGIS Netw
   - [Issue Templates](project-management/issue-templates/)
   - [Pull Request Template](project-management/pull_request_template.md)
   - [Automation](project-management/automation/)
+  - [PR Tracker Setup](project-management/pr-tracker-setup.md)
 
 ## Purpose
 
@@ -20,6 +21,15 @@ This repository serves as a central hub for organization-wide documentation, inc
 - Best practices
 - Common scripts and utilities
 - Organization-wide standards
+
+## Organization Pull Request Tracker
+
+We've set up an organization-wide pull request tracker to help monitor all PRs across repositories:
+
+- **Project Board**: [Organization Pull Request Tracker](https://github.com/orgs/PitchConnect/projects/3)
+- **Setup Guide**: [PR Tracker Setup](project-management/pr-tracker-setup.md)
+
+This tracker automatically collects all pull requests and provides various views to help manage them efficiently.
 
 ## Contributing
 
