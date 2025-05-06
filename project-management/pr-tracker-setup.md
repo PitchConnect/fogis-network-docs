@@ -7,6 +7,31 @@ This document provides instructions for setting up and using the Organization Pu
 The Organization Pull Request Tracker is available at:
 https://github.com/orgs/PitchConnect/projects/3
 
+## PR Status Options
+
+The PR tracker uses the following status options to track pull requests:
+
+- **Open**: PR is open and ready for review
+- **Draft**: PR is in draft state
+- **Needs Review**: PR is ready for review
+- **Changes Requested**: Changes have been requested on the PR
+- **CI Failed**: PR failed CI checks
+- **Approved**: PR is approved
+- **Merged**: PR is merged
+- **Closed**: PR is closed without merging
+
+### Adding the CI Failed Status
+
+To add the "CI Failed" status option to the PR Status field:
+
+1. Go to the [project settings](https://github.com/orgs/PitchConnect/projects/3/settings)
+2. Find the "PR Status" field and click the three dots (⋮) menu
+3. Select "Edit values" from the dropdown menu
+4. Click the "+ Add option" button
+5. Enter "CI Failed" as the name
+6. Select a red color
+7. Click "Save"
+
 ## Recommended Views
 
 After the project board is populated with pull requests, you can create the following custom views:
@@ -32,7 +57,17 @@ This view shows PRs that need review:
 4. Add filter: "PR Status" is "Needs Review"
 5. Group by: "Repository"
 
-### 3. My PRs
+### 3. CI Failed
+
+This view shows PRs that failed CI checks:
+
+1. Click "New view" in the project
+2. Name it "CI Failed"
+3. Select "Board" layout
+4. Add filter: "PR Status" is "CI Failed"
+5. Group by: "Repository"
+
+### 4. My PRs
 
 This view shows PRs created by you:
 
@@ -42,7 +77,7 @@ This view shows PRs created by you:
 4. Add filter: "Creator" is "@me"
 5. Group by: "PR Status"
 
-### 4. Recently Updated
+### 5. Recently Updated
 
 This view shows recently updated PRs:
 
@@ -61,6 +96,8 @@ The PR Tracker is automatically updated through GitHub Actions:
    - When a PR is opened: Status → "Open"
    - When a PR is converted to draft: Status → "Draft"
    - When a PR is ready for review: Status → "Needs Review"
+   - When a PR fails CI checks: Status → "CI Failed"
+   - When a PR passes CI checks after failing: Status → "Open" or "Draft" (depending on PR state)
    - When a PR is merged: Status → "Merged"
    - When a PR is closed without merging: Status → "Closed"
 
@@ -68,7 +105,7 @@ The PR Tracker is automatically updated through GitHub Actions:
 
 You can manually update the following fields as needed:
 
-- **PR Status**: Update to "Changes Requested" or "Approved" based on reviews
+- **PR Status**: Update to "Changes Requested" or "Approved" based on reviews (CI status is updated automatically)
 - **Labels**: Add relevant labels to categorize PRs
 - **Assignees**: Assign PRs to specific team members
 
