@@ -1,0 +1,189 @@
+name: CI Failure Tracker
+
+on:
+  workflow_call:
+    inputs:
+      project_id:
+        description: 'The ID of the project board'
+        required: true
+        type: string
+        default: 'PVT_kwDODF_kVc4A4M8N'
+      project_number:
+        description: 'The number of the project board'
+        required: true
+        type: number
+        default: 3
+      ci_status:
+        description: 'The status of the CI workflow'
+        required: true
+        type: string
+    secrets:
+      token:
+        description: 'GitHub token with project permissions'
+        required: true
+
+jobs:
+  update_pr_status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update PR status in project board
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.token }}
+          script: |
+            const projectId = '${{ inputs.project_id }}';
+            const projectNumber = ${{ inputs.project_number }};
+            const ciStatus = '${{ inputs.ci_status }}';
+            const prNumber = context.payload.pull_request ? context.payload.pull_request.number : 
+                            (context.payload.issue ? context.payload.issue.number : null);
+            
+            if (!prNumber) {
+              console.log('No PR number found in the context');
+              return;
+            }
+            
+            console.log(`Processing PR #${prNumber} with CI status: ${ciStatus}`);
+            
+            // Get the PR node ID
+            const prData = await github.graphql(`
+              query {
+                repository(owner: "${context.repo.owner}", name: "${context.repo.repo}") {
+                  pullRequest(number: ${prNumber}) {
+                    id
+                    isDraft
+                  }
+                }
+              }
+            `);
+            
+            const prNodeId = prData.repository.pullRequest.id;
+            const isDraft = prData.repository.pullRequest.isDraft;
+            
+            // Find the PR in the project
+            const projectData = await github.graphql(`
+              query {
+                organization(login: "${context.repo.owner}") {
+                  projectV2(number: ${projectNumber}) {
+                    items(first: 100) {
+                      nodes {
+                        id
+                        content {
+                          ... on PullRequest {
+                            id
+                            number
+                            repository {
+                              name
+                            }
+                          }
+                        }
+                      }
+                    }
+                    fields(first: 20) {
+                      nodes {
+                        ... on ProjectV2FieldCommon {
+                          id
+                          name
+                        }
+                        ... on ProjectV2SingleSelectField {
+                          id
+                          name
+                          options {
+                            id
+                            name
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `);
+            
+            // Find the PR item in the project
+            const projectItems = projectData.organization.projectV2.items.nodes;
+            const prItem = projectItems.find(item => 
+              item.content && 
+              item.content.id === prNodeId
+            );
+            
+            if (!prItem) {
+              console.log(`PR #${prNumber} not found in the project. Adding it now.`);
+              
+              // Add the PR to the project
+              const addResult = await github.graphql(`
+                mutation {
+                  addProjectV2ItemById(input: {
+                    projectId: "${projectId}",
+                    contentId: "${prNodeId}"
+                  }) {
+                    item {
+                      id
+                    }
+                  }
+                }
+              `);
+              
+              console.log(`Added PR #${prNumber} to the project`);
+              
+              // Use the newly added item ID
+              prItemId = addResult.addProjectV2ItemById.item.id;
+            } else {
+              prItemId = prItem.id;
+            }
+            
+            // Find the PR Status field
+            const fields = projectData.organization.projectV2.fields.nodes;
+            const statusField = fields.find(field => field.name === "PR Status");
+            
+            if (!statusField) {
+              console.log("PR Status field not found in the project");
+              return;
+            }
+            
+            // Determine the status option ID based on CI status
+            let statusOptionId;
+            
+            if (ciStatus === 'failure') {
+              // Find the CI Failed option
+              const ciFailedOption = statusField.options.find(option => option.name === "CI Failed");
+              if (ciFailedOption) {
+                statusOptionId = ciFailedOption.id;
+              } else {
+                console.log("CI Failed status option not found");
+                return;
+              }
+            } else if (ciStatus === 'success') {
+              // Revert to appropriate status based on PR state
+              if (isDraft) {
+                const draftOption = statusField.options.find(option => option.name === "Draft");
+                statusOptionId = draftOption.id;
+              } else {
+                const openOption = statusField.options.find(option => option.name === "Needs Review");
+                statusOptionId = openOption.id;
+              }
+            } else {
+              console.log(`Unsupported CI status: ${ciStatus}`);
+              return;
+            }
+            
+            // Update the PR status in the project
+            await github.graphql(`
+              mutation {
+                updateProjectV2ItemFieldValue(
+                  input: {
+                    projectId: "${projectId}",
+                    itemId: "${prItemId}",
+                    fieldId: "${statusField.id}",
+                    value: { 
+                      singleSelectOptionId: "${statusOptionId}"
+                    }
+                  }
+                ) {
+                  projectV2Item {
+                    id
+                  }
+                }
+              }
+            `);
+            
+            console.log(`Updated PR #${prNumber} status to ${ciStatus === 'failure' ? 'CI Failed' : (isDraft ? 'Draft' : 'Needs Review')}`);
